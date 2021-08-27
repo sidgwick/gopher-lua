@@ -28,21 +28,28 @@ func (lv lValueArraySorter) Less(i, j int) bool {
 	return lessThan(lv.L, lv.Values[i], lv.Values[j])
 }
 
+// 生成 Lua table 结构
+// acap 表示 table 里面数组的容量
+// hcap 表示 table 里面哈希表的容量
 func newLTable(acap int, hcap int) *LTable {
 	if acap < 0 {
 		acap = 0
 	}
+
 	if hcap < 0 {
 		hcap = 0
 	}
+
 	tb := &LTable{}
 	tb.Metatable = LNil
 	if acap != 0 {
 		tb.array = make([]LValue, 0, acap)
 	}
+
 	if hcap != 0 {
 		tb.strdict = make(map[string]LValue, hcap)
 	}
+
 	return tb
 }
 

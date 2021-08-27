@@ -11,10 +11,11 @@ const (
 	VarArgNeedsArg uint8 = 4
 )
 
+// DbgLocalInfo 结构用于记录本地变量的调试信息
 type DbgLocalInfo struct {
-	Name    string
-	StartPc int
-	EndPc   int
+	Name    string // 变量名称
+	StartPc int    // 变量作用域开始 pc 位置
+	EndPc   int    // 变量作用域失效 pc 位置
 }
 
 type DbgCall struct {
@@ -23,23 +24,23 @@ type DbgCall struct {
 }
 
 type FunctionProto struct {
-	SourceName         string
-	LineDefined        int
-	LastLineDefined    int
-	NumUpvalues        uint8
-	NumParameters      uint8
+	SourceName         string // 函数名
+	LineDefined        int    // 函数定义开始行
+	LastLineDefined    int    // 函数定义结束行
+	NumUpvalues        uint8  // TODO: what is upvalues?
+	NumParameters      uint8  // 函数参数数量
 	IsVarArg           uint8
-	NumUsedRegisters   uint8
+	NumUsedRegisters   uint8 // 使用寄存器的数量
 	Code               []uint32
-	Constants          []LValue
+	Constants          []LValue // 函数中使用到的 lua 常量
 	FunctionPrototypes []*FunctionProto
 
-	DbgSourcePositions []int
-	DbgLocals          []*DbgLocalInfo
+	DbgSourcePositions []int           // 函数代码所在的行号
+	DbgLocals          []*DbgLocalInfo // 本地变量 debug 相关
 	DbgCalls           []DbgCall
 	DbgUpvalues        []string
 
-	stringConstants []string
+	stringConstants []string // 函数中使用的字符串常量
 }
 
 /* Upvalue {{{ */

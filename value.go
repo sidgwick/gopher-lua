@@ -161,11 +161,13 @@ func (nm LNumber) Format(f fmt.State, c rune) {
 type LTable struct {
 	Metatable LValue
 
-	array   []LValue
+	array []LValue
+
 	dict    map[LValue]LValue
 	strdict map[string]LValue
-	keys    []LValue
-	k2i     map[LValue]int
+
+	keys []LValue
+	k2i  map[LValue]int
 }
 
 func (tb *LTable) String() string                     { return fmt.Sprintf("table: %p", tb) }
@@ -189,6 +191,7 @@ func (fn *LFunction) assertFloat64() (float64, bool)     { return 0, false }
 func (fn *LFunction) assertString() (string, bool)       { return "", false }
 func (fn *LFunction) assertFunction() (*LFunction, bool) { return fn, true }
 
+// Lua 虚拟机全局状态
 type Global struct {
 	MainThread    *LState
 	CurrentThread *LState
@@ -200,6 +203,7 @@ type Global struct {
 	gccount    int32
 }
 
+// Lua 解释器状态
 type LState struct {
 	G       *Global
 	Parent  *LState

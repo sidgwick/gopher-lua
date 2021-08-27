@@ -23,22 +23,23 @@ import (
 
 const opInvalidInstruction = ^uint32(0)
 
-const opSizeCode = 6
-const opSizeA = 8
-const opSizeB = 9
-const opSizeC = 9
-const opSizeBx = 18
-const opSizesBx = 18
+// 下面的单位都是 bit
+const opSizeCode = 6 // opcode 本身占用的大小
+const opSizeA = 8    // 寄存器 A 的大小
+const opSizeB = 9    // 寄存器 B 的大小
+const opSizeC = 9    // 寄存器 C 的大小
+const opSizeBx = 18  // 寄存器 BX 的大小
+const opSizesBx = 18 // 寄存器 SBX 的大小
 
-const opMaxArgsA = (1 << opSizeA) - 1
-const opMaxArgsB = (1 << opSizeB) - 1
-const opMaxArgsC = (1 << opSizeC) - 1
-const opMaxArgBx = (1 << opSizeBx) - 1
-const opMaxArgSbx = opMaxArgBx >> 1
+const opMaxArgsA = (1 << opSizeA) - 1  // 255 表示寄存器 A 存放的数据大小最多到 255, 下面计算同理
+const opMaxArgsB = (1 << opSizeB) - 1  // 511
+const opMaxArgsC = (1 << opSizeC) - 1  // 511
+const opMaxArgBx = (1 << opSizeBx) - 1 // 262143
+const opMaxArgSbx = opMaxArgBx >> 1    // +131071
 
 const (
 	OP_MOVE     int = iota /*      A B     R(A) := R(B)                            */
-	OP_MOVEN               /*      A B     R(A) := R(B); followed by R(C) MOVE ops */
+	OP_MOVEN               /*      A B     R(A) := R(B); followed by R(C) MOVE ops */ // 这个好像是 gopher-lua 自己设计的一个批量 move 指令, c 实现里面应该是没有, 用到的寄存器是 A/B/C 三个寄存器
 	OP_LOADK               /*     A Bx    R(A) := Kst(Bx)                          */
 	OP_LOADBOOL            /*  A B C   R(A) := (Bool)B; if (C) pc++                */
 	OP_LOADNIL             /*   A B     R(A) := ... := R(B) := nil                 */
@@ -170,18 +171,22 @@ var opProps = []opProp{
 	opProp{"NOP", false, false, opArgModeR, opArgModeN, opTypeASbx},
 }
 
+// 从 inst 指令得到操作吗
 func opGetOpCode(inst uint32) int {
 	return int(inst >> 26)
 }
 
+// 在 inst 指令设置操作码. 需要先清理掉原来的, 然后在重新设置
 func opSetOpCode(inst *uint32, opcode int) {
 	*inst = (*inst & 0x3ffffff) | uint32(opcode<<26)
 }
 
+// 获取寄存器 A 的数据
 func opGetArgA(inst uint32) int {
 	return int(inst>>18) & 0xff
 }
 
+// 设置寄存器 A 的数据
 func opSetArgA(inst *uint32, arg int) {
 	*inst = (*inst & 0xfc03ffff) | uint32((arg&0xff)<<18)
 }
@@ -210,6 +215,8 @@ func opSetArgBx(inst *uint32, arg int) {
 	*inst = (*inst & 0xfffc0000) | uint32(arg&0x3ffff)
 }
 
+// 这里获取 SBX 寄存器的数据, 首先取到 BX, 然后减去 SBX 最大值, 即可得到 SBX.
+// 设 SBX 是 8bit, 看上去 SBX 的范围不同于一般的表示范围 (-128, 127), 这里是 (-127, 128)
 func opGetArgSbx(inst uint32) int {
 	return opGetArgBx(inst) - opMaxArgSbx
 }
@@ -218,6 +225,7 @@ func opSetArgSbx(inst *uint32, arg int) {
 	opSetArgBx(inst, arg+opMaxArgSbx)
 }
 
+// 创建一个 OP_CODE A B C 这种形式的指令
 func opCreateABC(op int, a int, b int, c int) uint32 {
 	var inst uint32 = 0
 	opSetOpCode(&inst, op)
@@ -243,6 +251,9 @@ func opCreateASbx(op int, a int, sbx int) uint32 {
 	return inst
 }
 
+// 寄存器 BX 的高位第一位, 用于表示 isK
+// 当 OP_LOADK 操作数小于 255 的时候, opBitRk 位标记用来记录这一信息该位设置之后, 操作数依然不会大于 opMaxIndexRk 常量
+// TODO: 这地方实现是不是有问题, 应该是 18 位, 这里只用了 9 位
 const opBitRk = 1 << (opSizeB - 1)
 const opMaxIndexRk = opBitRk - 1
 
@@ -258,6 +269,7 @@ func opRkAsk(value int) int {
 	return value | opBitRk
 }
 
+// 这个函数用于将字节码翻译成可读指令
 func opToString(inst uint32) string {
 	op := opGetOpCode(inst)
 	if op > opCodeMax {

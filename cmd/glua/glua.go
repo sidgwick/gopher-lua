@@ -70,6 +70,7 @@ Available options are:
 		}
 	}
 
+	// 吧命令行给 lua 的参数, 存放到 argtb 里面, 然后设置全局变量 arg
 	if nargs := flag.NArg(); nargs > 0 {
 		script := flag.Arg(0)
 		argtb := L.NewTable()

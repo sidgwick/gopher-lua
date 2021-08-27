@@ -60,6 +60,7 @@ type IdentExpr struct {
 	Value string
 }
 
+// 对象成员获取表达式: object.key
 type AttrGetExpr struct {
 	ExprBase
 

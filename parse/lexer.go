@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/yuin/gopher-lua/ast"
 	"io"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/yuin/gopher-lua/ast"
 )
 
 const EOF = -1
@@ -427,7 +428,7 @@ finally:
 
 type Lexer struct {
 	scanner       *Scanner
-	Stmts         []ast.Stmt
+	Stmts         []ast.Stmt // stmts 里面存放的是语法分析之后的语句
 	PNewLine      bool
 	Token         ast.Token
 	PrevTokenType int
@@ -463,6 +464,7 @@ func Parse(reader io.Reader, name string) (chunk []ast.Stmt, err error) {
 			err, _ = e.(error)
 		}
 	}()
+
 	yyParse(lexer)
 	chunk = lexer.Stmts
 	return
